@@ -10,9 +10,11 @@ public class CodeGuessGame
 {
     private readonly int[] _code;
 
-    public CodeGuessGame(int codeLength = 6)
+    public int CodeLength => _code.Length;
+
+    public CodeGuessGame(int codeLength = 4, bool repeatsAllowed = false)
     {
-        _code = GenerateRandomArray(codeLength, 0, 9);
+        _code = GenerateRandomArray(codeLength, 0, 9, repeatsAllowed);
     }
 
     public CodeGuessResponse Guess(string guess)
@@ -52,7 +54,7 @@ public class CodeGuessGame
         if (guess.Length != _code.Length)
         {
             response.CorrectInput = false;
-        }        
+        }
 
         for (int i = 0; i < guess.Length; i++)
         {
@@ -70,12 +72,15 @@ public class CodeGuessGame
 
         response.CorrectGuess = true;
 
+        var tempCode = new int[_code.Length];
+
         for (int i = 0; i < guess.Length; i++)
         {
+            tempCode[i] = _code[i];
+
             if (guess[i] != _code[i])
             {
                 response.CorrectGuess = false;
-                break;
             }
         }
 
@@ -89,13 +94,27 @@ public class CodeGuessGame
 
         for (int i = 0; i < guess.Length; i++)
         {
-            if (guess[i] == _code[i])
+            if (guess[i] == tempCode[i])
             {
                 response.CorrectSymbolAndPositionCount++;
+                tempCode[i] = -1;
+                guess[i] = -1;
             }
-            else if (_code.Contains(guess[i]))
+        }
+
+        for (int i = 0; i < guess.Length; i++)
+        {
+            if (guess[i] == -1)
+            {
+                continue; // already matched
+            }
+
+            var index = Array.IndexOf(tempCode, guess[i]);
+
+            if (index >= 0)
             {
                 response.CorrectSymbolCount++;
+                tempCode[index] = -1;
             }
         }
 
@@ -115,14 +134,21 @@ public class CodeGuessGame
         _code = code;        
     }
 
-    public static int[] GenerateRandomArray(int n, int minValue, int maxValue)
+    public static int[] GenerateRandomArray(int n, int minValue, int maxValue, bool repeatsAllowed)
     {
         Random random = new Random(DateTime.UtcNow.Millisecond);
         int[] randomNumbers = new int[n];
 
-        for (int i = 0; i < n; i++)
+        if (repeatsAllowed)
         {
-            randomNumbers[i] = random.Next(minValue, maxValue);
+            for (int i = 0; i < n; i++)
+            {
+                randomNumbers[i] = random.Next(minValue, maxValue);
+            } 
+        }
+        else
+        {
+            randomNumbers = Enumerable.Range(minValue, maxValue - minValue + 1).OrderBy(x => random.Next()).Take(n).ToArray();
         }
 
         return randomNumbers;
