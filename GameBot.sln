@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GameBot.Core", "GameBot.Cor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameBot.Desktop", "GameBot.Desktop\GameBot.Desktop.csproj", "{AB541846-0589-4DA7-BDC3-BFCEEF69D19C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameBot.Telegram", "GameBot.Telegram\GameBot.Telegram.csproj", "{74E8B263-9804-4298-88E0-AC4E13EC32B5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{AB541846-0589-4DA7-BDC3-BFCEEF69D19C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AB541846-0589-4DA7-BDC3-BFCEEF69D19C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AB541846-0589-4DA7-BDC3-BFCEEF69D19C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74E8B263-9804-4298-88E0-AC4E13EC32B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74E8B263-9804-4298-88E0-AC4E13EC32B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74E8B263-9804-4298-88E0-AC4E13EC32B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74E8B263-9804-4298-88E0-AC4E13EC32B5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
