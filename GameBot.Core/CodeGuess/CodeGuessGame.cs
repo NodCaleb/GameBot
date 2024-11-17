@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using GameBot.Core.Interfaces;
 
 namespace GameBot.Core.CodeGuess;
 
-public class CodeGuessGame
+public class CodeGuessGame : IGame
 {
     private readonly int[] _code;
 
