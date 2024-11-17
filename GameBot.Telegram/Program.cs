@@ -1,14 +1,12 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.ReplyMarkups;
 using Telegram.Bot.Types;
-using Microsoft.Extensions.Caching.Memory;
 using GameBot.Core.CodeGuess;
-using System.Xml.Linq;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using GameBot.Core.Interfaces;
 using GameBot.Core.Services;
+using Microsoft.Extensions.Hosting;
 
 //Bot tutorial: https://gitlab.com/Athamaxy/telegram-bot-tutorial/-/blob/main/TutorialBot.cs
 
@@ -16,60 +14,51 @@ internal class Program
 {
     private static async Task Main(string[] args)
     {
-        var serviceCollection = new ServiceCollection();
-
         var configuration = new ConfigurationBuilder()
-                    .SetBasePath(AppContext.BaseDirectory) // Sets the base path for locating `appsettings.json`
-                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true) // Load JSON file
-                    .AddEnvironmentVariables() // Optionally add environment variables
+                    .SetBasePath(AppContext.BaseDirectory)
+                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                    .AddEnvironmentVariables()
                     .Build();
 
-        ConfigureServices(serviceCollection, configuration);
 
-        var serviceProvider = serviceCollection.BuildServiceProvider();
-        var app = serviceProvider.GetService<App>();
-        await app.Run();
+        var host = Host.CreateDefaultBuilder(args)
+            .ConfigureServices((context, services) =>
+            {
+                services.AddSingleton<IGameService, MemoryGameService>();
+                services.AddSingleton<ITelegramBotClient>(provider =>
+                {
+                    string botToken = configuration["Telegram:BotToken"];
+                    return new TelegramBotClient(botToken);
+                });
+                services.AddHostedService<BackgroundWorker>();
+            })
+            .Build();
+
+        await host.RunAsync();
     }
 
-    private static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
-    {
-        services.AddSingleton<IGameService, MemoryGameService>();
-        services.AddSingleton<ITelegramBotClient>(provider =>
-        {
-            string botToken = configuration["Telegram:BotToken"];
-            return new TelegramBotClient(botToken);
-        });
-
-        services.AddTransient<App>();
-    }
-
-    private class App
+    private class BackgroundWorker : BackgroundService
     {
         string _greetings = "Привет! Напиши /game1 или /game2 чтобы начать игру.";
         private readonly IGameService _gameService;
         private readonly ITelegramBotClient _bot;
-        private readonly CancellationTokenSource _cts;
 
-        public App(IGameService gameService, ITelegramBotClient bot)
+        public BackgroundWorker(IGameService gameService, ITelegramBotClient bot)
         {
             _gameService = gameService;
             _bot = bot;
-            _cts = new CancellationTokenSource();
         }
 
-        public async Task Run()
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var me = await _bot.GetMe();
-            //Console.WriteLine($"Hello, World! I am user {me.Id} and my name is {me.FirstName}.");
 
-            // StartReceiving does not block the caller thread. Receiving is done on the ThreadPool, so we use cancellation token
             _bot.StartReceiving(
                 updateHandler: HandleUpdate,
                 errorHandler: HandleError,
-                cancellationToken: _cts.Token
+                cancellationToken: stoppingToken
             );
 
-            // Tell the user the bot is online
             Console.WriteLine(
                 $"Bot @{me.Username} is running." +
                 Environment.NewLine +
@@ -78,10 +67,10 @@ internal class Program
                 $"Press enter to stop"
                 );
 
-            Console.ReadLine();
-
-            // Send cancellation request to stop the bot
-            _cts.Cancel();
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                
+            }
         }
 
         // Each time a user interacts with the bot, this method is called
@@ -136,16 +125,14 @@ internal class Program
                 {
                     await _bot.SendMessage(
                         user.Id,
-                        $"Пожалуйста, введите {game.CodeLength} цифры!",
-                        cancellationToken: _cts.Token
+                        $"Пожалуйста, введите {game.CodeLength} цифры!"
                     );
                 }
                 else if (response.CorrectGuess)
                 {
                     await _bot.SendMessage(
                         user.Id,
-                        "Вы выиграли 😉",
-                        cancellationToken: _cts.Token
+                        "Вы выиграли 😉"
                     );
                 }
                 else
@@ -154,8 +141,7 @@ internal class Program
                         user.Id,
                         $"Верных цифр: {response.CorrectSymbolCount}" +
                         Environment.NewLine +
-                        $"Верных цифр в правильном месте: {response.CorrectSymbolAndPositionCount}",
-                        cancellationToken: _cts.Token
+                        $"Верных цифр в правильном месте: {response.CorrectSymbolAndPositionCount}"
                     );
                 }
 
@@ -164,8 +150,7 @@ internal class Program
 
             await _bot.SendMessage(
                 user.Id,
-                _greetings,
-                cancellationToken: _cts.Token
+                _greetings
             );
         }
 
@@ -179,8 +164,7 @@ internal class Program
                 case "/start":
                     await _bot.SendMessage(
                         userId,
-                        _greetings,
-                        cancellationToken: _cts.Token
+                        _greetings
                     );
                     break;
 
@@ -189,8 +173,7 @@ internal class Program
                     _gameService.AddGame(userId.ToString(), game);
                     await _bot.SendMessage(
                         userId,
-                        $"Я загадал код из {game.CodeLength} уникальных цифр, попробуй угадать ;)",
-                        cancellationToken: _cts.Token
+                        $"Я загадал код из {game.CodeLength} уникальных цифр, попробуй угадать ;)"
                     );
                     break;
 
@@ -199,8 +182,7 @@ internal class Program
                     _gameService.AddGame(userId.ToString(), game);
                     await _bot.SendMessage(
                         userId,
-                        $"Я загадал код из {game.CodeLength} цифр (цифры могут повторяться), попробуй угадать ;)",
-                        cancellationToken: _cts.Token
+                        $"Я загадал код из {game.CodeLength} цифр (цифры могут повторяться), попробуй угадать ;)"
                     );
                     break;
 
@@ -221,8 +203,7 @@ internal class Program
         {
             await _bot.SendMessage(
                 userId,
-                _greetings,
-                cancellationToken: _cts.Token
+                _greetings
             );
         }
     }
