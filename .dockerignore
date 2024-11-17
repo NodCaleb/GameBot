@@ -1,0 +1,25 @@
+# Ignore build outputs
+bin/
+obj/
+
+# Ignore user-specific files
+*.user
+*.suo
+*.log
+*.tmp
+
+# Ignore IDE and editor configuration files
+.vscode/
+.idea/
+*.code-workspace
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore Docker files themselves (optional)
+Dockerfile*
+.dockerignore
+
+# Ignore test files and folders (if not required in the image)
+tests/

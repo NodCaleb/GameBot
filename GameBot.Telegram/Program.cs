@@ -77,6 +77,7 @@ internal class Program
                 Environment.NewLine +
                 $"Press enter to stop"
                 );
+
             Console.ReadLine();
 
             // Send cancellation request to stop the bot
