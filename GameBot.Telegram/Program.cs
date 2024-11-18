@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using GameBot.Core.Interfaces;
 using GameBot.Core.Services;
 using Microsoft.Extensions.Hosting;
+using System;
 
 //Bot tutorial: https://gitlab.com/Athamaxy/telegram-bot-tutorial/-/blob/main/TutorialBot.cs
 
@@ -76,17 +77,24 @@ internal class Program
         // Each time a user interacts with the bot, this method is called
         async Task HandleUpdate(ITelegramBotClient _, Update update, CancellationToken cancellationToken)
         {
-            switch (update.Type)
+            try
             {
-                // A message was received
-                case UpdateType.Message:
-                    await HandleMessage(update.Message!);
-                    break;
+                switch (update.Type)
+                {
+                    // A message was received
+                    case UpdateType.Message:
+                        await HandleMessage(update.Message!);
+                        break;
 
-                // A button was pressed
-                case UpdateType.CallbackQuery:
-                    await HandleButton(update.CallbackQuery!);
-                    break;
+                    // A button was pressed
+                    case UpdateType.CallbackQuery:
+                        await HandleButton(update.CallbackQuery!);
+                        break;
+                }
+            }
+            catch (Exception e)
+            {
+                await Console.Error.WriteLineAsync(e.Message);
             }
         }
 
@@ -125,7 +133,9 @@ internal class Program
                 {
                     await _bot.SendMessage(
                         user.Id,
-                        $"Пожалуйста, введите {game.CodeLength} цифры!"
+                        $"Пожалуйста, введите {game.CodeLength} цифры!" +
+                        Environment.NewLine +
+                        $"Или /stop, чтобы закончить игру"
                     );
                 }
                 else if (response.CorrectGuess)
@@ -139,9 +149,9 @@ internal class Program
                 {
                     await _bot.SendMessage(
                         user.Id,
-                        $"Верных цифр: {response.CorrectSymbolCount}" +
+                        $"Верных цифр в правильном месте: {response.CorrectSymbolAndPositionCount}" +
                         Environment.NewLine +
-                        $"Верных цифр в правильном месте: {response.CorrectSymbolAndPositionCount}"
+                        $"Верных цифр в непраильном месте: {response.CorrectSymbolCount}"
                     );
                 }
 
@@ -165,6 +175,14 @@ internal class Program
                     await _bot.SendMessage(
                         userId,
                         _greetings
+                    );
+                    break;
+
+                case "/stop":
+                    _gameService.StopGame(userId.ToString());
+                    await _bot.SendMessage(
+                        userId,
+                        "Игра остановлена" + Environment.NewLine + _greetings
                     );
                     break;
 

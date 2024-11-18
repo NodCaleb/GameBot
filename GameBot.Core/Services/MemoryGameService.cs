@@ -1,24 +1,28 @@
 ﻿using GameBot.Core.Interfaces;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace GameBot.Core.Services;
 
 public class MemoryGameService : IGameService
 {
-    private readonly MemoryCache _cache;
+    private readonly Dictionary<string, IGame> _games;
 
     public MemoryGameService()
     {
-        _cache = new MemoryCache(new MemoryCacheOptions());
+        _games = new Dictionary<string, IGame>();
     }
 
     public void AddGame(string key, IGame game)
     {
-        _cache.Set(key, game);
+        _games[key] = game;
     }
 
     public IGame? GetGame(string key)
     {
-        return _cache.Get<IGame>(key);
+        return _games.TryGetValue(key, out var game) ? game : null;
+    }
+
+    public void StopGame(string key)
+    {
+        _games.Remove(key);        
     }
 }
